@@ -1,0 +1,158 @@
+VM PRACTICAL EXERCISES — ANSWERS AND RUN INSTRUCTIONS
+======================================================
+
+IMPORTANT
+---------
+This guide includes the exercise visible in the current conversation: Python TCP client/server communication using a pickled DataObject. The complete original text for all four questions is not available in the conversation context I can access, so exercises 2–4 are marked clearly instead of being fabricated. Paste those questions and I can fill them in.
+
+EXERCISE 1 — SEND A PYTHON OBJECT TO A SERVER AND RECEIVE THE SUM
+=================================================================
+
+QUESTION
+--------
+Create a TCP server and client in Python. The client sends a DataObject with a name and a list of values. The server receives the object, prints the name and values, calculates their sum, and sends the total back to the client.
+
+FILES
+-----
+Create three files in the same directory:
+- data_object.py
+- server.py
+- client.py
+
+WHERE TO DO THIS
+----------------
+Run everything inside your Ubuntu virtual machine. Use two terminal windows, both on that VM. You can create/edit files with nano, VS Code, or another editor.
+
+STEP 1 — CREATE THE DIRECTORY
+-----------------------------
+mkdir -p ~/vm-exercises/exercise-01-object-sum
+cd ~/vm-exercises/exercise-01-object-sum
+
+STEP 2 — data_object.py
+-----------------------
+Create a file named data_object.py and write:
+
+class DataObject:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+STEP 3 — server.py
+------------------
+Create a file named server.py and write:
+
+import socket
+import pickle
+from data_object import DataObject
+
+HOST = "127.0.0.1"
+PORT = 12345
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind((HOST, PORT))
+    server.listen(1)
+
+    print(f"Server waiting on {HOST}:{PORT}...")
+    conn, address = server.accept()
+
+    with conn:
+        print("Client connected:", address)
+        data = conn.recv(4096)
+
+        if not data:
+            raise RuntimeError("Client sent no data.")
+
+        obj = pickle.loads(data)
+        print("Name:", obj.name)
+        print("Values:", obj.value)
+
+        total = sum(obj.value)
+        conn.sendall(str(total).encode("utf-8"))
+        print("Sent total:", total)
+
+STEP 4 — client.py
+------------------
+Create a file named client.py and write:
+
+import socket
+import pickle
+from data_object import DataObject
+
+HOST = "127.0.0.1"
+PORT = 12345
+
+obj = DataObject("Sanjay", [10, 20, 30, 40])
+payload = pickle.dumps(obj)
+
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
+    client.connect((HOST, PORT))
+    client.sendall(payload)
+
+    result = client.recv(1024).decode("utf-8")
+    print("Sum received from server:", result)
+
+STEP 5 — RUN THE SERVER
+-----------------------
+Open Terminal 1 in the Ubuntu VM and run:
+
+cd ~/vm-exercises/exercise-01-object-sum
+python3 server.py
+
+Wait until it says "Server waiting".
+
+STEP 6 — RUN THE CLIENT
+-----------------------
+Open Terminal 2 in the same Ubuntu VM and run:
+
+cd ~/vm-exercises/exercise-01-object-sum
+python3 client.py
+
+EXPECTED CLIENT OUTPUT
+---------------------
+Sum received from server: 100
+
+EXPECTED SERVER OUTPUT
+---------------------
+Server waiting on 127.0.0.1:12345...
+Client connected: ('127.0.0.1', <temporary-port>)
+Name: Sanjay
+Values: [10, 20, 30, 40]
+Sent total: 100
+
+The temporary port will differ each time.
+
+TROUBLESHOOTING
+---------------
+1. "Address already in use": stop the previous server with Ctrl+C; then retry.
+2. "ModuleNotFoundError: data_object": confirm data_object.py is in the same directory and use cd to enter that directory before running.
+3. "Connection refused": start server.py before client.py.
+4. If you change the port, change PORT in both files.
+5. A single recv(4096) is only suitable for a small demo. TCP can split data across multiple reads; robust applications need message framing, such as a length prefix, and a loop to read the complete message.
+
+SECURITY NOTE
+-------------
+pickle.loads() may execute arbitrary code during deserialization. Only use it with trusted data. Do not unpickle data from unknown clients or over an untrusted network. Production applications should use a safe, validated data format such as JSON and a clearly defined message protocol.
+
+EXERCISE 2 — ORIGINAL QUESTION NEEDED
+=====================================
+The full original question and answer are not available in the conversation context I can access. Paste the exact question so I can add the code, location, commands, and expected output without guessing.
+
+EXERCISE 3 — ORIGINAL QUESTION NEEDED
+=====================================
+The full original question and answer are not available in the conversation context I can access. Paste the exact question so I can add the code, location, commands, and expected output without guessing.
+
+EXERCISE 4 — ORIGINAL QUESTION NEEDED
+=====================================
+The full original question and answer are not available in the conversation context I can access. Paste the exact question so I can add the code, location, commands, and expected output without guessing.
+
+GENERAL UBUNTU VM COMMANDS
+=========================
+Open terminal: Ctrl+Alt+T
+Check Python version: python3 --version
+Run a Python file: python3 filename.py
+Stop a running program: Ctrl+C
+Show current directory: pwd
+List files: ls -la
+
+For each exercise, the final notes should include the exact question, required files, where to run the code, setup commands, code, execution steps, expected output, and troubleshooting.
